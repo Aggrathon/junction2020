@@ -1,0 +1,5 @@
+.vscode
+*.avi
+*.mp4
+*.gz
+tmp.py
