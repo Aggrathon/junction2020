@@ -1,3 +1,4 @@
+import os
 from typing import Tuple, List
 
 import cv2
@@ -8,24 +9,48 @@ mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
 
-def longest_stretch(arr: np.ndarray) -> Tuple[int, int]:
+def render_video_vertical(input: str, output: str):
+    cap = cv2.VideoCapture(input)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    rotate = width > height
+    if rotate:
+        width, height = height, width
+    out = cv2.VideoWriter(
+        output,
+        cv2.VideoWriter_fourcc(*"XVID"),
+        cap.get(cv2.CAP_PROP_FPS),
+        (width, height),
+    )
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            break
+        if rotate:
+            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+        out.write(image)
+    out.release()
+    cap.release()
+
+
+def longest_stretch(arr: List) -> Tuple[int, int]:
     longest_start = 0
     longest_length = 0
     start = 0
     length = 0
     for i, x in enumerate(arr):
-        if np.isnan(x):
+        if x:
+            length += 1
+        else:
             if length > longest_length:
                 longest_start = start
                 longest_length = length
             start = i + 1
             length = 0
-        else:
-            length += 1
     if length > longest_length:
         longest_start = start
         longest_length = length
-    return longest_start, longest_length
+    return longest_start, longest_start + longest_length
 
 
 def extract_poses(video: str) -> List:
@@ -54,8 +79,7 @@ def smooth_curve(x: np.ndarray, window: int = 30, sigma: float = 5) -> np.ndarra
     if window % 2 == 0:
         window += 1
     kernel = np.exp(-((np.arange(window) - window // 2) ** 2) / (2 * sigma ** 2))
-    kernel /= np.sum(kernel)
-    return np.convolve(x, kernel, "same")
+    return np.convolve(x, kernel, "same") / np.convolve(np.ones_like(x), kernel, "same")
 
 
 def find_extremes(x: np.ndarray) -> np.ndarray:
@@ -76,11 +100,8 @@ def find_largest_gap(x: np.ndarray) -> float:
 
 
 def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int, int]:
-    # Trim nans
-    start, end = longest_stretch(x)
-    end += start
     # Smooth to find sparse extremes
-    x = smooth_curve(x[start:end], smoothing_window)
+    x = smooth_curve(x, smoothing_window)
     extremes = find_extremes(x)
     gap = find_largest_gap(x[extremes])
     peaks = np.where(x[extremes] > gap)[0]
@@ -99,59 +120,147 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
     right = peaks[left + 1]
     left = peaks[left]
     # Remove other walleys:
-    start2 = 0
-    end2 = len(x)
-    for i in range(right + 1, end2):
+    start = 0
+    end = len(x)
+    for i in range(right + 1, end):
         if x[i] < gap:
-            end2 = i
+            end = i
             break
-    for i in range(left - 1, start2, -1):
+    for i in range(left - 1, start, -1):
         if x[i] < gap:
-            start2 = i + 1
+            start = i + 1
             break
     # Find matching peaks on both sides of the walley
     mathes = [
         (i, j, (x[i] + x[j]) * 0.5 - gap - abs(x[i] - x[j]) * 0.5)
-        for i in range(start2, left + 1)
-        for j in range(right, end2)
+        for i in range(start, left + 1)
+        for j in range(right, end)
     ]
     am = np.argmax([x[2] for x in mathes])
-    return start + mathes[am][0], start + mathes[am][1]
+    return mathes[am][0], mathes[am][1]
 
 
-def trim_video(input: str, output: str, start: int, end: int, rotate: bool = True):
-    cap = cv2.VideoCapture(input)
-    size = (
-        int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-        int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+def find_in_frame(
+    poses: List,
+    left: float = 0.1,
+    right: float = 0.9,
+    top: float = 0.2,
+    bottom: float = 0.8,
+    landmarks: List = [
+        mp_pose.PoseLandmark.LEFT_EYE,
+        mp_pose.PoseLandmark.RIGHT_EYE,
+        mp_pose.PoseLandmark.LEFT_SHOULDER,
+        mp_pose.PoseLandmark.RIGHT_SHOULDER,
+        mp_pose.PoseLandmark.LEFT_EAR,
+        mp_pose.PoseLandmark.RIGHT_EAR,
+    ],
+) -> Tuple[int, int]:
+    in_frame = [
+        all(
+            [
+                p[l].x > left and p[l].x < right and p[l].y > top and p[l].y < bottom
+                for l in landmarks
+            ]
+        )
+        for p in poses
+    ]
+    return longest_stretch(in_frame)
+
+
+def max_diff(x: List) -> float:
+    return max(x) - min(x)
+
+
+def crop_regions(
+    poses,
+    smoothing: float = 3.0,
+    horisontal_padding: float = 0.3,
+    vertical_padding: float = 0.55,
+    horisontal_marks: List = [
+        mp_pose.PoseLandmark.LEFT_SHOULDER,
+        mp_pose.PoseLandmark.RIGHT_SHOULDER,
+    ],
+    vertical_marks: List = [
+        mp_pose.PoseLandmark.LEFT_SHOULDER,
+        mp_pose.PoseLandmark.LEFT_SHOULDER,
+        mp_pose.PoseLandmark.LEFT_EYE,
+        mp_pose.PoseLandmark.RIGHT_EYE,
+        mp_pose.PoseLandmark.LEFT_EAR,
+        mp_pose.PoseLandmark.RIGHT_EAR,
+        mp_pose.PoseLandmark.MOUTH_LEFT,
+        mp_pose.PoseLandmark.MOUTH_RIGHT,
+    ],
+) -> Tuple[np.ndarray, float, np.ndarray, float]:
+    # Find the horisontal center
+    hcenter = np.array(
+        [sum([p[l].x for l in horisontal_marks]) / len(horisontal_marks) for p in poses]
     )
-    if rotate:
-        size = (size[1], size[0])
+    hwidth = max([max_diff([p[l].x for l in horisontal_marks]) for p in poses]) * (
+        1 + horisontal_padding * 2
+    )
+    hcenter = np.maximum(np.minimum(hcenter, 1 - hwidth * 0.5), hwidth * 0.5)
+    # Find the vertical center
+    vcenter = np.array(
+        [sum([p[l].y for l in vertical_marks]) / len(vertical_marks) for p in poses]
+    )
+    vheight = max([max_diff([p[l].y for l in vertical_marks]) for p in poses]) * (
+        1 + vertical_padding * 2
+    )
+    vcenter = np.maximum(np.minimum(vcenter, 1 - vheight * 0.5), vheight * 0.5)
+    # Smooth out the movements
+    hcenter = smooth_curve(hcenter, smoothing * 4, smoothing)
+    vcenter = smooth_curve(vcenter, smoothing * 4, smoothing)
+    return (hcenter, hwidth, vcenter, vheight)
+
+
+def crop_and_trim_video(
+    input: str,
+    output: str,
+    start: int,
+    crops: Tuple[np.ndarray, float, np.ndarray, float],
+):
+    cap = cv2.VideoCapture(input)
+    fwidth = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    fheight = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    iwidth = int(fwidth * crops[1])
+    iheight = int(fheight * crops[3])
     out = cv2.VideoWriter(
-        output, cv2.VideoWriter_fourcc(*"XVID"), cap.get(cv2.CAP_PROP_FPS), size,
+        output,
+        cv2.VideoWriter_fourcc(*"XVID"),
+        cap.get(cv2.CAP_PROP_FPS),
+        (iwidth, iheight),
     )
     for i in range(start):
         cap.read()
-    for i in range(start, end):
+    for x, y in zip(crops[0], crops[2]):
         success, image = cap.read()
         if not success:
             break
-        if rotate:
-            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-        out.write(image)
+        x = int(fwidth * x) - iwidth // 2
+        y = int(fheight * y) - iheight // 2
+        out.write(image[y : y + iheight, x : x + iwidth])
     cap.release()
     out.release()
 
 
 if __name__ == "__main__":
-    poses = extract_poses("turn_around_full.mp4")
+    if not os.path.exists("turn_around_full.avi"):
+        print("Rotating video")
+        render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
+    print("Extracting poses")
+    poses = extract_poses("turn_around_full.avi")
+    print("Trimming poses")
+    start, end = longest_stretch(poses)
+    start2, end2 = find_in_frame(poses[start:end])
+    start, end = start + start2, start + end2
     face_z = [
-        np.nan
-        if p is None
-        else p[mp_pose.PoseLandmark.LEFT_EYE].z + p[mp_pose.PoseLandmark.RIGHT_EYE].z
-        for p in poses
+        p[mp_pose.PoseLandmark.RIGHT_SHOULDER].x
+        - p[mp_pose.PoseLandmark.LEFT_SHOULDER].x
+        for p in poses[start:end]
     ]
-    start, end = find_largest_valley(face_z)
-    trim_video(
-        "turn_around_full.mp4", "output2.avi", start - 30 // 5, end + 30 // 5, True,
-    )
+    start2, end2 = find_largest_valley(face_z)
+    start, end = start + start2 - 30 // 3, start + end2 + 30 // 3
+    crops = crop_regions(poses[start:end])
+    print("Cropping and cutting video")
+    crop_and_trim_video("turn_around_full.avi", "output2.avi", start, crops)
+
