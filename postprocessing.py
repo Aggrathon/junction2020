@@ -120,7 +120,7 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
 
 
 def find_in_frame(
-    poses: List, horisontal_margin=0.05, vertical_margin=0.5, min_height=0.1,
+    poses: List, horisontal_margin=0.01, vertical_margin=0.5, min_height=0.1,
 ) -> Tuple[int, int]:
     in_frame = [
         where_in_frame(p, horisontal_margin, vertical_margin, min_height) == InFrame.OK
@@ -226,7 +226,7 @@ def postprocess(input_video, output_video):
 
 
 if __name__ == "__main__":
-    if not os.path.exists("turn_around_full.avi"):
-        print("Rotating video")
-        render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
-    postprocess("turn_around_full.avi", "output2.avi")
+    # if not os.path.exists("turn_around_full.avi"):
+    #     print("Rotating video")
+    #     render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
+    postprocess("turn_around_3.mkv", "output3.avi")

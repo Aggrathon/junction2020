@@ -7,3 +7,4 @@ tmp.py
 *.png
 __pycache__
 *.tflite
+*.mkv
