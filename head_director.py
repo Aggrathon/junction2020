@@ -5,6 +5,7 @@ import mediapipe as mp
 import pyttsx3
 
 from pose import move_instruction
+from postprocessing import postprocess
 
 mp_pose = mp.solutions.pose
 
@@ -98,13 +99,52 @@ def intro_speech(tts, cap, show: bool = False):
 
 
 def instruction_speech(tts, cap, show: bool = False):
-    pass
+    tts_say(tts, "Listen to the instructions, and do not move until I say begin!")
+    if show:
+        camera_flush(cap)
+        camera_show(cap)
+    tts_say(
+        tts,
+        "Without moving your head too much you will slowly, very slowly, turn around.",
+    )
+    if show:
+        camera_flush(cap)
+        camera_show(cap)
+    tts_say(
+        tts,
+        "When you have turned for a full circle, walk somewhere where I cannot see you.",
+    )
+    if show:
+        camera_flush(cap)
+        camera_show(cap)
 
 
 def record_turning(cap, tts, output_file: str = "head_raw.avi", show: bool = False):
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out = cv2.VideoWriter(
+        output_file,
+        cv2.VideoWriter_fourcc(*"XVID"),
+        cap.get(cv2.CAP_PROP_FPS),
+        (width, height),
+    )
+    pose = mp_pose.Pose(False, 0.5, 0.5)
+    camera_flush(cap)
     tts_say(tts, "Begin!")
+    while cap.isOpened():
+        cap.grab()  # Skip each other frame due to processing delays
+        success, image = cap.read()
+        if not success:
+            break
+        image2 = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image2.flags.writeable = False
+        results = pose.process(image2)
+        if results.pose_landmarks is None:
+            break
+        out.write(image)
     tts_say(tts, "Stopping the recording!")
-    pass
+    out.release()
+    pose.close()
 
 
 if __name__ == "__main__":
@@ -120,9 +160,8 @@ if __name__ == "__main__":
     record_turning(cap, tts, "head_raw.avi", SHOW)
     cap.release()
     tts_say(tts, "Processing the video")
-    # TODO Post processing
+    postprocess("head_raw.avi", "head_processed.avi")
     tts_say(tts, "Come look at the results")
     print(
         "The raw video is in 'head_raw.avi' and the processed video is in 'head_processed.avi'"
     )
-

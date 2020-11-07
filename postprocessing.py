@@ -222,12 +222,9 @@ def process_video(
     out.release()
 
 
-if __name__ == "__main__":
-    if not os.path.exists("turn_around_full.avi"):
-        print("Rotating video")
-        render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
+def postprocess(input_video, output_video):
     print("Extracting poses")
-    poses = extract_poses("turn_around_full.avi")
+    poses = extract_poses(input_video)
     print("Trimming poses")
     start, end = find_in_frame(poses)
     face_z = [
@@ -239,4 +236,11 @@ if __name__ == "__main__":
     start, end = start + max(0, start2 - 30 // 3), min(start + end2 + 30 // 3, end)
     crops = crop_regions(poses[start:end])
     print("Post-processing video")
-    process_video("turn_around_full.avi", "output2.avi", start, crops)
+    process_video(input_video, output_video, start, crops)
+
+
+if __name__ == "__main__":
+    if not os.path.exists("turn_around_full.avi"):
+        print("Rotating video")
+        render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
+    postprocess("turn_around_full.avi", "output2.avi")
