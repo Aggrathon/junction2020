@@ -3,3 +3,7 @@
 *.mp4
 *.gz
 tmp.py
+*.npy
+*.png
+__pycache__
+data

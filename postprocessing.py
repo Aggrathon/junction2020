@@ -5,6 +5,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+from segmentation import load_model, predict_person, blur_background
+
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
@@ -174,8 +176,8 @@ def max_diff(x: List) -> float:
 def crop_regions(
     poses,
     smoothing: float = 3.0,
-    horisontal_padding: float = 0.3,
-    vertical_padding: float = 0.55,
+    horisontal_padding: float = 0.35,
+    vertical_padding: float = 0.6,
     horisontal_marks: List = [
         mp_pose.PoseLandmark.LEFT_SHOULDER,
         mp_pose.PoseLandmark.RIGHT_SHOULDER,
@@ -213,11 +215,12 @@ def crop_regions(
     return (hcenter, hwidth, vcenter, vheight)
 
 
-def crop_and_trim_video(
+def process_video(
     input: str,
     output: str,
     start: int,
     crops: Tuple[np.ndarray, float, np.ndarray, float],
+    blur_strength: float = 0.05,
 ):
     cap = cv2.VideoCapture(input)
     fwidth = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -230,6 +233,7 @@ def crop_and_trim_video(
         cap.get(cv2.CAP_PROP_FPS),
         (iwidth, iheight),
     )
+    model = load_model()
     for i in range(start):
         cap.read()
     for x, y in zip(crops[0], crops[2]):
@@ -238,7 +242,10 @@ def crop_and_trim_video(
             break
         x = int(fwidth * x) - iwidth // 2
         y = int(fheight * y) - iheight // 2
-        out.write(image[y : y + iheight, x : x + iwidth])
+        image = image[y : y + iheight, x : x + iwidth]
+        mask = predict_person(model, image)
+        image = blur_background(image, mask, blur_strength)
+        out.write(image)
     cap.release()
     out.release()
 
@@ -261,6 +268,5 @@ if __name__ == "__main__":
     start2, end2 = find_largest_valley(face_z)
     start, end = start + start2 - 30 // 3, start + end2 + 30 // 3
     crops = crop_regions(poses[start:end])
-    print("Cropping and cutting video")
-    crop_and_trim_video("turn_around_full.avi", "output2.avi", start, crops)
-
+    print("Post-processing video")
+    process_video("turn_around_full.avi", "output2.avi", start, crops)
