@@ -91,7 +91,7 @@ def move_instruction(
     if frame == InFrame.CLOSE:
         return "You are too close!"
     if frame == InFrame.FAR:
-        return "You are too far away!"
+        return "Come closer!"
     if frame == InFrame.LEFT:
         return "You are too far to the left!"
     if frame == InFrame.RIGHT:

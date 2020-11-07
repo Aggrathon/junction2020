@@ -155,17 +155,15 @@ def crop_regions(
     hcenter = np.array(
         [sum([p[l].x for l in horisontal_marks]) / len(horisontal_marks) for p in poses]
     )
-    hwidth = max([max_diff([p[l].x for l in horisontal_marks]) for p in poses]) * (
-        1 + horisontal_padding * 2
-    )
+    hwidth = max([max_diff([p[l].x for l in horisontal_marks]) for p in poses])
+    hwidth = min(hwidth * (1 + horisontal_padding * 2), 1.0)
     hcenter = np.maximum(np.minimum(hcenter, 1 - hwidth * 0.5), hwidth * 0.5)
     # Find the vertical center
     vcenter = np.array(
         [sum([p[l].y for l in vertical_marks]) / len(vertical_marks) for p in poses]
     )
-    vheight = max([max_diff([p[l].y for l in vertical_marks]) for p in poses]) * (
-        1 + vertical_padding * 2
-    )
+    vheight = max([max_diff([p[l].y for l in vertical_marks]) for p in poses])
+    vheight = min(vheight * (1 + vertical_padding * 2), 1.0)
     vcenter = np.maximum(np.minimum(vcenter, 1 - vheight * 0.5), vheight * 0.5)
     # Smooth out the movements
     hcenter = smooth_curve(hcenter, smoothing * 4, smoothing)
