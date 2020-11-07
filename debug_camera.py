@@ -12,7 +12,7 @@ if __name__ == "__main__":
     pose = mp_pose.Pose(False, 0.5, 0.5)
     cam = Camera(False)
     mod = load_model()
-
+    last_mask = 1.0
     while cam.isOpened():
         succ, image = cam.read()
         if not succ:
@@ -21,9 +21,8 @@ if __name__ == "__main__":
         image2.flags.writeable = False
         results = pose.process(image2)
         mask = predict_person(mod, image)
-        image2 = image.astype(np.float32)
-        image2 = image2 * mask * 0.5 + mask * np.array([[[0.0, 0.0, 0.5]]])
-        image = image2.astype(np.uint8)
+        last_mask = np.minimum(1.0, last_mask * 0.8 + mask * 0.4)
+        image = (image.astype(np.float32) * last_mask).astype(np.uint8)
         mp_drawing.draw_landmarks(
             image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS
         )
