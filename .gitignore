@@ -6,4 +6,4 @@ tmp.py
 *.npy
 *.png
 __pycache__
-data
+*.tflite

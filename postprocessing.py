@@ -5,9 +5,10 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+from pose import InFrame, where_in_frame
 from segmentation import load_model, predict_person, blur_background
+from utils import max_diff, smooth_curve
 
-mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
 
@@ -77,13 +78,6 @@ def extract_poses(video: str) -> List:
     return poses
 
 
-def smooth_curve(x: np.ndarray, window: int = 30, sigma: float = 5) -> np.ndarray:
-    if window % 2 == 0:
-        window += 1
-    kernel = np.exp(-((np.arange(window) - window // 2) ** 2) / (2 * sigma ** 2))
-    return np.convolve(x, kernel, "same") / np.convolve(np.ones_like(x), kernel, "same")
-
-
 def find_extremes(x: np.ndarray) -> np.ndarray:
     return np.concatenate(
         (
@@ -143,34 +137,12 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
 
 
 def find_in_frame(
-    poses: List,
-    left: float = 0.1,
-    right: float = 0.9,
-    top: float = 0.2,
-    bottom: float = 0.8,
-    landmarks: List = [
-        mp_pose.PoseLandmark.LEFT_EYE,
-        mp_pose.PoseLandmark.RIGHT_EYE,
-        mp_pose.PoseLandmark.LEFT_SHOULDER,
-        mp_pose.PoseLandmark.RIGHT_SHOULDER,
-        mp_pose.PoseLandmark.LEFT_EAR,
-        mp_pose.PoseLandmark.RIGHT_EAR,
-    ],
+    poses: List, horisontal_margin=0.1, vertical_margin=0.3, min_height=0.1,
 ) -> Tuple[int, int]:
     in_frame = [
-        all(
-            [
-                p[l].x > left and p[l].x < right and p[l].y > top and p[l].y < bottom
-                for l in landmarks
-            ]
-        )
-        for p in poses
+        where_in_frame(p, horisontal_margin, vertical_margin, min_height) for p in poses
     ]
     return longest_stretch(in_frame)
-
-
-def max_diff(x: List) -> float:
-    return max(x) - min(x)
 
 
 def crop_regions(
@@ -257,16 +229,14 @@ if __name__ == "__main__":
     print("Extracting poses")
     poses = extract_poses("turn_around_full.avi")
     print("Trimming poses")
-    start, end = longest_stretch(poses)
-    start2, end2 = find_in_frame(poses[start:end])
-    start, end = start + start2, start + end2
+    start, end = find_in_frame(poses)
     face_z = [
         p[mp_pose.PoseLandmark.RIGHT_SHOULDER].x
         - p[mp_pose.PoseLandmark.LEFT_SHOULDER].x
         for p in poses[start:end]
     ]
     start2, end2 = find_largest_valley(face_z)
-    start, end = start + start2 - 30 // 3, start + end2 + 30 // 3
+    start, end = start + max(0, start2 - 30 // 3), min(start + end2 + 30 // 3, end)
     crops = crop_regions(poses[start:end])
     print("Post-processing video")
     process_video("turn_around_full.avi", "output2.avi", start, crops)

@@ -7,7 +7,7 @@ import tensorflow as tf
 
 
 def load_model():
-    file = "data/deeplabv3.tflite"
+    file = "deeplabv3.tflite"
     if not os.path.exists(file):
         urllib.request.urlretrieve(
             "https://tfhub.dev/tensorflow/lite-model/deeplabv3/1/default/1?lite-format=tflite",
