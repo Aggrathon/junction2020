@@ -88,31 +88,12 @@ def find_extremes(x: np.ndarray) -> np.ndarray:
     )
 
 
-def find_largest_gap(x: np.ndarray) -> float:
-    x = np.sort(x)
-    diff = np.abs(x[1:] - x[:-1])
-    am = np.argmax(diff)
-    return (x[am] + x[am + 1]) * 0.5
-
-
 def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int, int]:
     # Smooth to find sparse extremes
     x = smooth_curve(x, smoothing_window)
     extremes = find_extremes(x)
-    gap = find_largest_gap(x[extremes])
-    peaks = np.where(x[extremes] > gap)[0]
-    print(peaks)
-    # Avoid "one-sided" walleys
-    while len(peaks) <= 1:
-        extremes = np.delete(extremes, peaks)
-        gap = find_largest_gap(x[extremes])
-        peaks = np.where(x[extremes] > gap)[0]
-    while len(peaks) >= len(extremes) - 1:
-        extremes = extremes[peaks]
-        gap = find_largest_gap(x[extremes])
-        peaks = np.where(x[extremes] > gap)[0]
-    print(peaks)
-    peaks = extremes[peaks]
+    gap = (x[extremes].max() + x[extremes].min()) * 0.5
+    peaks = extremes[np.where(x[extremes] > gap)[0]]
     # This is the largest walley
     left = np.argmax(peaks[1:] - peaks[:-1])
     right = peaks[left + 1]
@@ -152,7 +133,7 @@ def crop_regions(
     poses,
     smoothing: float = 3.0,
     horisontal_padding: float = 0.35,
-    vertical_padding: float = 0.6,
+    vertical_padding: float = 0.8,
     horisontal_marks: List = [
         mp_pose.PoseLandmark.LEFT_SHOULDER,
         mp_pose.PoseLandmark.RIGHT_SHOULDER,
