@@ -16,50 +16,69 @@ def max_diff(x: List) -> float:
     return max(x) - min(x)
 
 
-def get_camera():
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
-    return cap
+class Camera:
+    def __init__(self, rotate: bool = False):
+        self.cap = cv2.VideoCapture(0)
+        self.rotate = rotate
+        # Try set the maximum resolution
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
+
+    def flush(self, amount: int = 5):
+        for _ in range(amount):
+            self.cap.grab()
+
+    def read(self):
+        succ, img = self.cap.read()
+        if self.rotate:
+            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+        return succ, img
+
+    def isOpened(self):
+        return self.cap.isOpened()
+
+    def release(self):
+        self.cap.release()
+
+    def get(self, prop):
+        if self.rotate and prop == cv2.CAP_PROP_FRAME_WIDTH:
+            prop = cv2.CAP_PROP_FRAME_HEIGHT
+        elif self.rotate and prop == cv2.CAP_PROP_FRAME_HEIGHT:
+            prop = cv2.CAP_PROP_FRAME_WIDTH
+        return self.cap.get(prop)
+
+    def show(self, image=None):
+        if image is None:
+            image = self.read()[1]
+        cv2.imshow("Camera", image)
+        cv2.waitKey(1)
 
 
-def get_tts():
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 120)
-    voices = engine.getProperty("voices")
-    # Prioritise certain voices
-    voice_ids = (
-        [
-            p.id
-            for p in voices
-            if p.name == "Microsoft Hazel Desktop - English (Great Britain)"
-        ]
-        + [
-            p.id
-            for p in voices
-            if p.name == "Microsoft Zira Desktop - English (United States)"
-        ]
-        + [p.id for p in voices if p.name == "default"]
-        + [p.id for p in voices if p.name == "english"]
-        + [p.id for p in voices if p.name == "english-us"]
-    )
-    engine.setProperty("voice", voice_ids[0])
-    return engine
+class TTS:
+    def __init__(self):
+        engine = pyttsx3.init()
+        engine.setProperty("rate", 120)
+        voices = engine.getProperty("voices")
+        # Prioritise certain voices
+        voice_ids = (
+            [
+                p.id
+                for p in voices
+                if p.name == "Microsoft Hazel Desktop - English (Great Britain)"
+            ]
+            + [
+                p.id
+                for p in voices
+                if p.name == "Microsoft Zira Desktop - English (United States)"
+            ]
+            + [p.id for p in voices if p.name == "default"]
+            + [p.id for p in voices if p.name == "english"]
+            + [p.id for p in voices if p.name == "english-us"]
+        )
+        engine.setProperty("voice", voice_ids[0])
+        self.engine = engine
 
-
-def tts_say(tts: pyttsx3.engine.Engine, text: str):
-    tts.say(text)
-    print("[TTS]:", text)
-    tts.runAndWait()
-
-
-def camera_flush(cap, amount: int = 10):
-    for _ in range(amount):
-        cap.grab()
-
-
-def camera_show(cap, image=None):
-    if image is None:
-        _, image = cap.read()
-    cv2.imshow("Camera", image)
-    cv2.waitKey(1)
+    def say(self, text: str):
+        self.engine.say(text)
+        print("[TTS]:", text)
+        self.engine.runAndWait()
