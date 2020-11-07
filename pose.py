@@ -79,9 +79,9 @@ def where_in_frame(
 
 def move_instruction(
     pose,
-    horisontal_padding: float = 0.3,
+    horisontal_padding: float = 0.35,
     vertical_padding: float = 1.0,
-    min_height: float = 0.15,
+    min_height: float = 0.2,
 ) -> str:
     if pose is None:
         return "I can not see you!"
