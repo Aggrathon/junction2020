@@ -153,6 +153,8 @@ def crop_regions(
     horisontal_marks: List = [
         mp_pose.PoseLandmark.LEFT_SHOULDER,
         mp_pose.PoseLandmark.RIGHT_SHOULDER,
+        mp_pose.PoseLandmark.LEFT_EAR,
+        mp_pose.PoseLandmark.RIGHT_EAR,
     ],
     vertical_marks: List = [
         mp_pose.PoseLandmark.LEFT_SHOULDER,
@@ -192,7 +194,7 @@ def process_video(
     output: str,
     start: int,
     crops: Tuple[np.ndarray, float, np.ndarray, float],
-    blur_strength: float = 0.05,
+    blur_strength: float = 0.03,
 ):
     cap = cv2.VideoCapture(input)
     fwidth = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -208,6 +210,7 @@ def process_video(
     model = load_model()
     for i in range(start):
         cap.read()
+    last_mask = 1.0
     for x, y in zip(crops[0], crops[2]):
         success, image = cap.read()
         if not success:
@@ -216,7 +219,8 @@ def process_video(
         y = int(fheight * y) - iheight // 2
         image = image[y : y + iheight, x : x + iwidth]
         mask = predict_person(model, image)
-        image = blur_background(image, mask, blur_strength)
+        last_mask = last_mask * 0.5 + mask * 0.5
+        image = blur_background(image, last_mask, blur_strength)
         out.write(image)
     cap.release()
     out.release()
