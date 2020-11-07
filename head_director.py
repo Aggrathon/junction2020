@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 
 from pose import move_instruction, where_in_frame, InFrame
-from postprocessing import postprocess
+from postprocessing import postprocess_head
 from utils import Camera, TTS
 
 mp_pose = mp.solutions.pose
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     record_turning(cam, tts, "head_raw.avi", SHOW)
     cam.release()
     tts.say("Processing the video")
-    postprocess("head_raw.avi", "head_processed.avi")
+    postprocess_head("head_raw.avi", "head_processed.avi")
     tts.say("Come look at the results")
     print(
         "The raw video is in 'head_raw.avi' and the processed video is in 'head_processed.avi'"

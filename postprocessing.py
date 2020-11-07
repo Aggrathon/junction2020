@@ -209,7 +209,7 @@ def process_video(
     out.release()
 
 
-def postprocess(input_video, output_video):
+def postprocess_head(input_video, output_video):
     print("Extracting poses")
     poses = extract_poses(input_video)
     print("Trimming poses")
@@ -226,8 +226,29 @@ def postprocess(input_video, output_video):
     process_video(input_video, output_video, start, crops)
 
 
+def postprocess_ear(input_video, output_video):
+    print("Extracting poses")
+    poses = extract_poses(input_video)
+    print("Cropping video")
+    shoulder_z = [
+        p[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * 0.5
+        + p[mp_pose.PoseLandmark.LEFT_SHOULDER].y * 0.5
+        for p in poses
+        if p is not None
+    ]
+    shoulder_z = np.array(shoulder_z).mean()
+    crops = (
+        np.ones(len(poses)) * 0.5,
+        1.0,
+        np.ones(len(poses)) * shoulder_z * 0.5,
+        shoulder_z,
+    )
+    print("Post-processing video")
+    process_video(input_video, output_video, 0, crops)
+
+
 if __name__ == "__main__":
     # if not os.path.exists("turn_around_full.avi"):
     #     print("Rotating video")
     #     render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
-    postprocess("turn_around_3.mkv", "output3.avi")
+    postprocess_head("turn_around_3.mkv", "output3.avi")

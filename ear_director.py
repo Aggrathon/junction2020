@@ -4,7 +4,7 @@ import cv2
 import mediapipe as mp
 
 from pose import ear_instruction, ear_in_frame, EarFrame
-from postprocessing import postprocess
+from postprocessing import postprocess_ear
 from utils import Camera, TTS
 
 mp_pose = mp.solutions.pose
@@ -113,9 +113,9 @@ if __name__ == "__main__":
     instruction_speech(tts, cam, SHOW)
     record_ear(cam, tts, "ear_raw.avi", 30, SHOW)
     cam.release()
-    # tts.say("Processing the video")
-    # postprocess("head_raw.avi", "head_processed.avi")
-    # tts.say("Come look at the results")
-    # print(
-    #     "The raw video is in 'ear_raw.avi' and the processed video is in 'ear_processed.avi'"
-    # )
+    tts.say("Processing the video")
+    postprocess_ear("ear_raw.avi", "ear_processed.avi")
+    tts.say("Come look at the results")
+    print(
+        "The raw video is in 'ear_raw.avi' and the processed video is in 'ear_processed.avi'"
+    )
