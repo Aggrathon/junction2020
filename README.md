@@ -12,7 +12,7 @@ One solution would be to mount you phone somewhere, and then film yourself turni
 
 ## Solution
 
-My solution is to introduce AI that can guide you through the process and tell (through audio) you how to move to find the sweet spot. It can also edit the video to improve the framing, cut the video, and defocus the background.
+My solution is to introduce AI that can guide you through the process and direct you (through audio) to the sweet spot. It can also edit the video to improve the framing, cut the video, and defocus the background.
 
 
 ## Technology
