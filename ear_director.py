@@ -9,7 +9,7 @@ mp_pose = mp.solutions.pose
 
 
 def direct_to_spot(cam, tts, still_frames: int = 3, show: bool = False) -> bool:
-    pose = mp_pose.Pose(True, 0.5, 0.5)
+    pose = mp_pose.Pose(False, 0.5, 0.5)
     first_iter = True
     counter = still_frames
     while True:
@@ -41,13 +41,29 @@ def direct_to_spot(cam, tts, still_frames: int = 3, show: bool = False) -> bool:
     return first_iter
 
 
+def intro_speech(tts, cam, show: bool = False):
+    if show:
+        cam.flush()
+        cam.show()
+    tts.say("Hi and welcome to the guided ear scanning.")
+    if show:
+        cam.flush()
+        cam.show()
+    tts.say(
+        "Hold your phone in your left hand, pointing the camera towards your left ear."
+    )
+    if show:
+        cam.flush()
+        cam.show()
+
+
 if __name__ == "__main__":
     SHOW = True
     tts = TTS()
     cam = Camera(True)
     cam.show()
-    # intro_speech(tts, cam, SHOW)
-    direct_to_spot(cam, tts, SHOW)
+    intro_speech(tts, cam, SHOW)
+    direct_to_spot(cam, tts, 3, SHOW)
     # instruction_speech(tts, cam, SHOW)
     # Repeat directions if the subject has moved
     # while not direct_to_spot(cam, tts, SHOW):

@@ -126,10 +126,10 @@ if __name__ == "__main__":
     cam = Camera(True)
     cam.show()
     intro_speech(tts, cam, SHOW)
-    direct_to_spot(cam, tts, SHOW)
+    direct_to_spot(cam, tts, 3, SHOW)
     instruction_speech(tts, cam, SHOW)
     # Repeat directions if the subject has moved
-    while not direct_to_spot(cam, tts, SHOW):
+    while not direct_to_spot(cam, tts, 3, SHOW):
         instruction_speech(tts, cam, SHOW)
     record_turning(cam, tts, "head_raw.avi", SHOW)
     cam.release()

@@ -24,7 +24,7 @@ class Camera:
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
 
-    def flush(self, amount: int = 5):
+    def flush(self, amount: int = 10):
         for _ in range(amount):
             self.cam.grab()
 
@@ -47,11 +47,11 @@ class Camera:
             prop = cv2.CAP_PROP_FRAME_WIDTH
         return self.cam.get(prop)
 
-    def show(self, image=None):
+    def show(self, image=None) -> int:
         if image is None:
             image = self.read()[1]
         cv2.imshow("Camera", image)
-        cv2.waitKey(1)
+        return cv2.waitKey(1)
 
     def grab(self) -> bool:
         return self.cam.grab()

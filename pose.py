@@ -116,13 +116,20 @@ class EarFrame(Enum):
 
 
 def ear_in_frame(
-    pose, radius: float = 0.2, dist: float = 0.1, eye: float = 0.3, margin: float = 0.2,
+    pose,
+    radius: float = 0.15,
+    alignment: float = 0.1,
+    nose: float = 0.2,
+    margin: float = 0.1,
 ) -> EarFrame:
     if pose is None:
         return EarFrame.NOT
     left_ear = pose[mp_pose.PoseLandmark.LEFT_EAR]
     right_ear = pose[mp_pose.PoseLandmark.RIGHT_EAR]
-    if abs(left_ear.x - right_ear.x) > dist or abs(left_ear.y - right_ear.y) > dist:
+    if (
+        abs(left_ear.x - right_ear.x) > alignment
+        or abs(left_ear.y - right_ear.y) > alignment
+    ):
         return EarFrame.NOT_STRAIGHT
     x = (left_ear.x + right_ear.x) * 0.5
     y = (left_ear.y + right_ear.y) * 0.5
@@ -131,12 +138,12 @@ def ear_in_frame(
     if y < 0.5 - radius:
         return EarFrame.UP
     if x < 0.5 - radius:
-        if left_ear.z > right_ear.z:
+        if left_ear.z < right_ear.z:
             return EarFrame.FORWARD
         else:
             return EarFrame.BACK
     if x > 0.5 + radius:
-        if left_ear.z > right_ear.z:
+        if left_ear.z < right_ear.z:
             return EarFrame.BACK
         else:
             return EarFrame.FORWARD
@@ -144,23 +151,26 @@ def ear_in_frame(
     right_shoulder = pose[mp_pose.PoseLandmark.RIGHT_SHOULDER]
     if (left_shoulder.y + right_shoulder.y) * 0.5 > 1.0 - margin:
         return EarFrame.CLOSE
-    left_eye = pose[mp_pose.PoseLandmark.LEFT_EYE]
-    right_eye = pose[mp_pose.PoseLandmark.RIGHT_EYE]
-    if min(left_eye.x + right_eye.x) < margin:
+    noselm = pose[mp_pose.PoseLandmark.NOSE]
+    if noselm.x < margin:
         return EarFrame.CLOSE
-    if max(left_eye.x + right_eye.x) > 1.0 - margin:
+    if noselm.x > 1.0 - margin:
         return EarFrame.CLOSE
-    if abs(x - (left_eye.x + right_eye.x) * 0.5) < eye:
+    if abs(x - noselm.x) < nose:
         return EarFrame.FAR
     return EarFrame.OK
 
 
 def ear_instruction(
-    pose, radius: float = 0.2, dist: float = 0.1, eye: float = 0.3, margin: float = 0.2,
+    pose,
+    radius: float = 0.15,
+    alignment: float = 0.1,
+    nose: float = 0.2,
+    margin: float = 0.1,
 ) -> str:
     if pose is None:
-        return "I can not see your ear!"
-    frame = ear_in_frame(pose, radius, dist, eye, margin)
+        return "I can not track you!"
+    frame = ear_in_frame(pose, radius, alignment, nose, margin)
     if frame == EarFrame.FORWARD:
         return "Move your phone forwards!"
     if frame == EarFrame.BACK:
