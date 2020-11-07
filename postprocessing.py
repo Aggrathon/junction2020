@@ -201,7 +201,8 @@ def process_video(
         y = int(fheight * y) - iheight // 2
         image = image[y : y + iheight, x : x + iwidth]
         mask = predict_person(model, image)
-        last_mask = last_mask * 0.5 + mask * 0.5
+        # since the segmentation is on images, there needs to be some smoothing for videos
+        last_mask = np.minimum(1.0, last_mask * 0.8 + mask * 0.4)
         image = blur_background(image, last_mask, blur_strength)
         out.write(image)
     cap.release()
