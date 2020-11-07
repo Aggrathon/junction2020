@@ -1,9 +1,7 @@
-import time
-
 import cv2
 import mediapipe as mp
 
-from pose import move_instruction
+from pose import move_instruction, where_in_frame, InFrame
 from postprocessing import postprocess
 from utils import Camera, TTS
 
@@ -21,7 +19,7 @@ def direct_to_spot(cam, tts, show: bool = False) -> bool:
         if show:
             cam.show(image)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image.flags.get_tts, tts_saywriteable = False
+        image.flags.writeable = False
         results = pose.process(image)
         if results.pose_landmarks:
             ins = move_instruction(results.pose_landmarks.landmark)
@@ -39,6 +37,9 @@ def direct_to_spot(cam, tts, show: bool = False) -> bool:
 
 
 def intro_speech(tts, cam, show: bool = False):
+    if show:
+        cam.flush()
+        cam.show()
     tts.say("Hi and welcome to the guided head scanning.")
     if show:
         cam.flush()
@@ -56,6 +57,9 @@ def intro_speech(tts, cam, show: bool = False):
 
 
 def instruction_speech(tts, cam, show: bool = False):
+    if show:
+        cam.flush()
+        cam.show()
     tts.say("Listen to the instructions, and do not move until I say begin!")
     if show:
         cam.flush()
@@ -75,12 +79,12 @@ def instruction_speech(tts, cam, show: bool = False):
 
 
 def record_turning(cam, tts, output_file: str = "head_raw.avi", show: bool = False):
-    width = int(cam.get(cv2.cam_PROP_FRAME_WIDTH))
-    height = int(cam.get(cv2.cam_PROP_FRAME_HEIGHT))
+    width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
     out = cv2.VideoWriter(
         output_file,
         cv2.VideoWriter_fourcc(*"XVID"),
-        cam.get(cv2.cam_PROP_FPS) * 0.5,
+        cam.get(cv2.CAP_PROP_FPS) * 0.5,
         (width, height),
     )
     pose = mp_pose.Pose(False, 0.5, 0.5)
@@ -98,16 +102,25 @@ def record_turning(cam, tts, output_file: str = "head_raw.avi", show: bool = Fal
         results = pose.process(image2)
         if results.pose_landmarks is None:
             break
+        elif (
+            where_in_frame(results.pose_landmarks.landmark, 0.05, 0.5, 0.1)
+            != InFrame.OK
+        ):
+            break
         out.write(image)
     tts.say("Stopping the recording!")
     out.release()
     pose.close()
+    if show:
+        cam.flush()
+        cam.show()
 
 
 if __name__ == "__main__":
     SHOW = True
     tts = TTS()
-    cam = Camera()
+    cam = Camera(True)
+    cam.show()
     intro_speech(tts, cam, SHOW)
     direct_to_spot(cam, tts, SHOW)
     instruction_speech(tts, cam, SHOW)

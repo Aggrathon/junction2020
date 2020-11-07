@@ -101,6 +101,7 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
     extremes = find_extremes(x)
     gap = find_largest_gap(x[extremes])
     peaks = np.where(x[extremes] > gap)[0]
+    print(peaks)
     # Avoid "one-sided" walleys
     while len(peaks) <= 1:
         extremes = np.delete(extremes, peaks)
@@ -110,6 +111,7 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
         extremes = extremes[peaks]
         gap = find_largest_gap(x[extremes])
         peaks = np.where(x[extremes] > gap)[0]
+    print(peaks)
     peaks = extremes[peaks]
     # This is the largest walley
     left = np.argmax(peaks[1:] - peaks[:-1])
@@ -137,7 +139,7 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
 
 
 def find_in_frame(
-    poses: List, horisontal_margin=0.1, vertical_margin=0.2, min_height=0.1,
+    poses: List, horisontal_margin=0.05, vertical_margin=0.5, min_height=0.1,
 ) -> Tuple[int, int]:
     in_frame = [
         where_in_frame(p, horisontal_margin, vertical_margin, min_height) == InFrame.OK

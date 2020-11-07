@@ -18,40 +18,43 @@ def max_diff(x: List) -> float:
 
 class Camera:
     def __init__(self, rotate: bool = False):
-        self.cap = cv2.VideoCapture(0)
+        self.cam = cv2.VideoCapture(0)
         self.rotate = rotate
         # Try set the maximum resolution
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
+        self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
+        self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
 
     def flush(self, amount: int = 5):
         for _ in range(amount):
-            self.cap.grab()
+            self.cam.grab()
 
     def read(self):
-        succ, img = self.cap.read()
+        succ, img = self.cam.read()
         if self.rotate:
-            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+            img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
         return succ, img
 
     def isOpened(self):
-        return self.cap.isOpened()
+        return self.cam.isOpened()
 
     def release(self):
-        self.cap.release()
+        self.cam.release()
 
     def get(self, prop):
         if self.rotate and prop == cv2.CAP_PROP_FRAME_WIDTH:
             prop = cv2.CAP_PROP_FRAME_HEIGHT
         elif self.rotate and prop == cv2.CAP_PROP_FRAME_HEIGHT:
             prop = cv2.CAP_PROP_FRAME_WIDTH
-        return self.cap.get(prop)
+        return self.cam.get(prop)
 
     def show(self, image=None):
         if image is None:
             image = self.read()[1]
         cv2.imshow("Camera", image)
         cv2.waitKey(1)
+
+    def grab(self) -> bool:
+        return self.cam.grab()
 
 
 class TTS:
