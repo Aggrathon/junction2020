@@ -7,11 +7,11 @@ mp_pose = mp.solutions.pose
 
 
 class Direction(Enum):
-    TOWARD = 0
+    UNKNOWN = 0
     LEFT = 1
     AWAY = 2
     RIGHT = 3
-    UNKNOWN = 4
+    TOWARD = 4
 
 
 def direction(pose) -> Direction:
@@ -34,14 +34,14 @@ def direction(pose) -> Direction:
 
 
 class InFrame(Enum):
-    OK = 0
+    NOT = 0
     LEFT = 1
     RIGHT = 2
     HIGH = 3
     LOW = 4
     CLOSE = 5
     FAR = 6
-    NOT = 7
+    OK = 7
 
 
 def where_in_frame(

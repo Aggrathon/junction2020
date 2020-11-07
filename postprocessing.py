@@ -140,7 +140,8 @@ def find_in_frame(
     poses: List, horisontal_margin=0.1, vertical_margin=0.2, min_height=0.1,
 ) -> Tuple[int, int]:
     in_frame = [
-        where_in_frame(p, horisontal_margin, vertical_margin, min_height) for p in poses
+        where_in_frame(p, horisontal_margin, vertical_margin, min_height) == InFrame.OK
+        for p in poses
     ]
     return longest_stretch(in_frame)
 
