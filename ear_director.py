@@ -1,3 +1,5 @@
+from timeit import default_timer as timer
+
 import cv2
 import mediapipe as mp
 
@@ -41,7 +43,7 @@ def direct_to_spot(cam, tts, still_frames: int = 3, show: bool = False) -> bool:
     return first_iter
 
 
-def intro_speech(tts, cam, show: bool = False):
+def intro_speech(tts, cam, left: bool = True, show: bool = False):
     if show:
         cam.flush()
         cam.show()
@@ -49,9 +51,52 @@ def intro_speech(tts, cam, show: bool = False):
     if show:
         cam.flush()
         cam.show()
+    if left:
+        tts.say(
+            "Hold your phone in your left hand, pointing the camera towards your left ear."
+        )
+    else:
+        tts.say(
+            "Hold your phone in your right hand, pointing the camera towards your right ear."
+        )
+    if show:
+        cam.flush()
+        cam.show()
+
+
+def instruction_speech(tts, cam, show: bool = False):
+    if show:
+        cam.flush()
+        cam.show()
     tts.say(
-        "Hold your phone in your left hand, pointing the camera towards your left ear."
+        "Slowly turn, tilt and roll your head to show the camera different sides of your ear."
     )
+
+
+def record_ear(
+    cam, tts, output_file: str = "ear_raw.avi", duration: float = 30, show: bool = False
+):
+    width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out = cv2.VideoWriter(
+        output_file,
+        cv2.VideoWriter_fourcc(*"XVID"),
+        cam.get(cv2.CAP_PROP_FPS),
+        (width, height),
+    )
+    cam.flush()
+    time = timer() + duration
+    while cam.isOpened():
+        success, image = cam.read()
+        if not success:
+            break
+        if show:
+            cam.show(image)
+        out.write(image)
+        if timer() > time:
+            break
+    tts.say("Stopping the recording!")
+    out.release()
     if show:
         cam.flush()
         cam.show()
@@ -59,20 +104,18 @@ def intro_speech(tts, cam, show: bool = False):
 
 if __name__ == "__main__":
     SHOW = True
+    LEFT = True
     tts = TTS()
     cam = Camera(True)
     cam.show()
-    intro_speech(tts, cam, SHOW)
+    intro_speech(tts, cam, LEFT, SHOW)
     direct_to_spot(cam, tts, 3, SHOW)
-    # instruction_speech(tts, cam, SHOW)
-    # Repeat directions if the subject has moved
-    # while not direct_to_spot(cam, tts, SHOW):
-    #     instruction_speech(tts, cam, SHOW)
-    # record_turning(cam, tts, "head_raw.avi", SHOW)
+    instruction_speech(tts, cam, SHOW)
+    record_ear(cam, tts, "ear_raw.avi", 30, SHOW)
     cam.release()
     # tts.say("Processing the video")
     # postprocess("head_raw.avi", "head_processed.avi")
     # tts.say("Come look at the results")
     # print(
-    #     "The raw video is in 'head_raw.avi' and the processed video is in 'head_processed.avi'"
+    #     "The raw video is in 'ear_raw.avi' and the processed video is in 'ear_processed.avi'"
     # )
