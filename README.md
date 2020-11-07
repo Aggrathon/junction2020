@@ -1,4 +1,4 @@
-# D*AI*rector
+# D**AI**rector
 
 This is a project for [Junction 2020](https://connected.hackjunction.com), targeting the Genelec challenge.
 
