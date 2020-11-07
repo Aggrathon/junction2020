@@ -102,11 +102,11 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
     gap = find_largest_gap(x[extremes])
     peaks = np.where(x[extremes] > gap)[0]
     # Avoid "one-sided" walleys
-    while len(peaks) == 1:
+    while len(peaks) <= 1:
         extremes = np.delete(extremes, peaks)
         gap = find_largest_gap(x[extremes])
         peaks = np.where(x[extremes] > gap)[0]
-    while len(peaks) == len(extremes) - 1:
+    while len(peaks) >= len(extremes) - 1:
         extremes = extremes[peaks]
         gap = find_largest_gap(x[extremes])
         peaks = np.where(x[extremes] > gap)[0]
@@ -137,7 +137,7 @@ def find_largest_valley(x: np.ndarray, smoothing_window: int = 15) -> Tuple[int,
 
 
 def find_in_frame(
-    poses: List, horisontal_margin=0.1, vertical_margin=0.3, min_height=0.1,
+    poses: List, horisontal_margin=0.1, vertical_margin=0.2, min_height=0.1,
 ) -> Tuple[int, int]:
     in_frame = [
         where_in_frame(p, horisontal_margin, vertical_margin, min_height) for p in poses

@@ -48,7 +48,7 @@ def where_in_frame(
     pose,
     horisontal_margin: float = 0.15,
     vertical_margin: float = 0.3,
-    min_height: float = 0.1,
+    min_height: float = 0.2,
 ) -> InFrame:
     if pose is None:
         return InFrame.NOT
@@ -81,7 +81,7 @@ def move_instruction(
     pose,
     horisontal_margin: float = 0.15,
     vertical_margin: float = 0.3,
-    min_height: float = 0.1,
+    min_height: float = 0.2,
 ) -> str:
     if pose is None:
         return "I can not see you!"
@@ -92,12 +92,12 @@ def move_instruction(
         return "You are too close!"
     if frame == InFrame.FAR:
         return "You are too far away!"
-    if frame == InFrame.HIGH:
-        return "The phone is too low down!"
-    if frame == InFrame.LOW:
-        return "The phone is too high up!"
     if frame == InFrame.LEFT:
         return "You are too far to the left!"
     if frame == InFrame.RIGHT:
         return "You are too far to the right!"
+    if frame == InFrame.HIGH:
+        return "The phone is too low down!"
+    if frame == InFrame.LOW:
+        return "The phone is too high up!"
     return ""
