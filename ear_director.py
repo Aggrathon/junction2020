@@ -68,13 +68,11 @@ def instruction_speech(tts, cam, show: bool = False):
     if show:
         cam.flush()
         cam.show()
-    tts.say(
-        "Slowly turn, tilt and roll your head to show the camera different sides of your ear."
-    )
+    tts.say("Lets show the camera different sides of your ear!")
 
 
 def record_ear(
-    cam, tts, output_file: str = "ear_raw.avi", duration: float = 30, show: bool = False
+    cam, tts, output_file: str = "ear_raw.avi", duration: float = 10, show: bool = False
 ):
     width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -84,8 +82,10 @@ def record_ear(
         cam.get(cv2.CAP_PROP_FPS),
         (width, height),
     )
+    tts.say("Slowly turn your head from side to side.")
     cam.flush()
     time = timer() + duration
+    step = 0
     while cam.isOpened():
         success, image = cam.read()
         if not success:
@@ -94,7 +94,14 @@ def record_ear(
             cam.show(image)
         out.write(image)
         if timer() > time:
-            break
+            if step == 0:
+                tts.say("Slowly tilt your head left and right.")
+            elif step == 1:
+                tts.say("Slowly roll your head around.")
+            else:
+                break
+            step += 1
+            time = timer() + duration
     tts.say("Stopping the recording!")
     out.release()
     if show:
@@ -111,7 +118,7 @@ if __name__ == "__main__":
     intro_speech(tts, cam, LEFT, SHOW)
     direct_to_spot(cam, tts, 3, SHOW)
     instruction_speech(tts, cam, SHOW)
-    record_ear(cam, tts, "ear_raw.avi", 30, SHOW)
+    record_ear(cam, tts, "ear_raw.avi", 10, SHOW)
     cam.release()
     tts.say("Processing the video")
     postprocess_ear("ear_raw.avi", "ear_processed.avi")
