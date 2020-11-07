@@ -2,54 +2,12 @@ import time
 
 import cv2
 import mediapipe as mp
-import pyttsx3
 
 from pose import move_instruction
 from postprocessing import postprocess
+from utils import camera_show, camera_flush, get_camera, get_tts, tts_say
 
 mp_pose = mp.solutions.pose
-
-
-def get_tts():
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 120)
-    voices = engine.getProperty("voices")
-    # Prioritise certain voices
-    voice_ids = (
-        [
-            p.id
-            for p in engine.getProperty("voices")
-            if p.name == "Microsoft Hazel Desktop - English (Great Britain)"
-        ]
-        + [
-            p.id
-            for p in engine.getProperty("voices")
-            if p.name == "Microsoft Zira Desktop - English (United States)"
-        ]
-        + [p.id for p in engine.getProperty("voices") if p.name == "default"]
-        + [p.id for p in engine.getProperty("voices") if p.name == "english"]
-        + [p.id for p in engine.getProperty("voices") if p.name == "english-us"]
-    )
-    engine.setProperty("voice", voice_ids[0])
-    return engine
-
-
-def tts_say(tts: pyttsx3.engine.Engine, text: str):
-    tts.say(text)
-    print("[TTS]:", text)
-    tts.runAndWait()
-
-
-def camera_flush(cap, amount: int = 10):
-    for _ in range(amount):
-        cap.grab()
-
-
-def camera_show(cap, image=None):
-    if image is None:
-        _, image = cap.read()
-    cv2.imshow("Camera", image)
-    cv2.waitKey(1)
 
 
 def direct_to_spot(cap, tts, show: bool = False) -> bool:
@@ -125,7 +83,7 @@ def record_turning(cap, tts, output_file: str = "head_raw.avi", show: bool = Fal
     out = cv2.VideoWriter(
         output_file,
         cv2.VideoWriter_fourcc(*"XVID"),
-        cap.get(cv2.CAP_PROP_FPS),
+        cap.get(cv2.CAP_PROP_FPS) * 0.5,
         (width, height),
     )
     pose = mp_pose.Pose(False, 0.5, 0.5)
@@ -136,6 +94,8 @@ def record_turning(cap, tts, output_file: str = "head_raw.avi", show: bool = Fal
         success, image = cap.read()
         if not success:
             break
+        if show:
+            camera_show(cap, image)
         image2 = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image2.flags.writeable = False
         results = pose.process(image2)
@@ -150,7 +110,7 @@ def record_turning(cap, tts, output_file: str = "head_raw.avi", show: bool = Fal
 if __name__ == "__main__":
     SHOW = True
     tts = get_tts()
-    cap = cv2.VideoCapture(0)
+    cap = get_camera()
     intro_speech(tts, cap, SHOW)
     direct_to_spot(cap, tts, SHOW)
     instruction_speech(tts, cap, SHOW)
