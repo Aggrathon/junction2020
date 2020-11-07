@@ -8,9 +8,10 @@ from utils import Camera, TTS
 mp_pose = mp.solutions.pose
 
 
-def direct_to_spot(cam, tts, show: bool = False) -> bool:
+def direct_to_spot(cam, tts, still_frames: int = 3, show: bool = False) -> bool:
     pose = mp_pose.Pose(True, 0.5, 0.5)
     first_iter = True
+    counter = still_frames
     while True:
         cam.flush()
         success, image = cam.read()
@@ -21,17 +22,21 @@ def direct_to_spot(cam, tts, show: bool = False) -> bool:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
         results = pose.process(image)
-        if results.pose_landmarks:
-            ins = move_instruction(results.pose_landmarks.landmark)
-        else:
-            ins = move_instruction(None)
+        ins = move_instruction(
+            results.pose_landmarks.landmark if results.pose_landmarks else None
+        )
         if ins == "":
-            if not first_iter:
+            if not first_iter and counter == still_frames:
                 tts.say("Stand still!")
-            break
+            still_frames -= 1
+            if still_frames <= 0:
+                break
+            else:
+                continue
         else:
             tts.say(ins)
         first_iter = False
+        counter = still_frames
     pose.close()
     return first_iter
 
@@ -84,14 +89,13 @@ def record_turning(cam, tts, output_file: str = "head_raw.avi", show: bool = Fal
     out = cv2.VideoWriter(
         output_file,
         cv2.VideoWriter_fourcc(*"XVID"),
-        cam.get(cv2.CAP_PROP_FPS) * 0.5,
+        cam.get(cv2.CAP_PROP_FPS),
         (width, height),
     )
     pose = mp_pose.Pose(False, 0.5, 0.5)
     cam.flush()
     tts.say("Begin!")
     while cam.isOpened():
-        cam.grab()  # Skip each other frame due to processing delays
         success, image = cam.read()
         if not success:
             break
