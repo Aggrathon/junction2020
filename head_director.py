@@ -11,7 +11,7 @@ mp_pose = mp.solutions.pose
 
 def get_tts():
     engine = pyttsx3.init()
-    engine.setProperty("rate", 150)
+    engine.setProperty("rate", 120)
     voices = engine.getProperty("voices")
     # Prioritise certain voices
     voice_ids = (
@@ -46,7 +46,7 @@ def show_camera():
     cv2.waitKey(0)
 
 
-def direct_to_spot(cap, tts, flush: int = 10) -> bool:
+def direct_to_spot(cap, tts, flush: int = 10, show: bool = False) -> bool:
     pose = mp_pose.Pose(True, 0.5, 0.5)
     first_iter = True
     while True:
@@ -55,6 +55,9 @@ def direct_to_spot(cap, tts, flush: int = 10) -> bool:
         success, image = cap.read()
         if not success:
             break
+        if show:
+            cv2.imshow("Camera", image)
+            cv2.waitKey(0)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
         results = pose.process(image)

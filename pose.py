@@ -95,7 +95,7 @@ def move_instruction(
     if frame == InFrame.HIGH:
         return "The phone is too low down!"
     if frame == InFrame.LOW:
-        return "The phone is too hight up!"
+        return "The phone is too high up!"
     if frame == InFrame.LEFT:
         return "You are too far to the left!"
     if frame == InFrame.RIGHT:
