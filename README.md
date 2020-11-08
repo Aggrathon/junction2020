@@ -3,14 +3,14 @@
 This is a project for [Junction 2020](https://connected.hackjunction.com), targeting the Genelec challenge. A video demonstrating the project can be viewed [here](https://youtu.be/_wg1eVbX8Es).
 
 
-## Challenge
+## The Challenge
 
 Create something that enables the capture of a 360 video of yourself (with a mobile phone) without the help of anyone and without moving.
 
 One solution would be to mount you phone somewhere, and then film yourself turning on the spot. But the question then becomes: which spot? It's difficult to frame yourself when you cannot see the screen. Then you also need to cut away all the extra footage. Furthermore, the background not moving might impact later analysis.
 
 
-## Solution
+## The Solution
 
 My solution is to introduce AI that can guide you through the process and direct you (through audio) to the sweet spot. It can also edit the video to improve the framing, cut the video, and defocus the background.
 
