@@ -1,6 +1,6 @@
 # D`AI`rector
 
-This is a project for [Junction 2020](https://connected.hackjunction.com), targeting the Genelec challenge. A video demonstrating the project can be viewed [here](https://youtu.be/fmVov_BnvsQ).
+This is a project for [Junction 2020](https://connected.hackjunction.com), targeting the Genelec challenge. A video demonstrating the project can be viewed [here](https://youtu.be/_wg1eVbX8Es).
 
 
 ## Challenge
