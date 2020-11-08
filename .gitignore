@@ -8,3 +8,4 @@ tmp.py
 __pycache__
 *.tflite
 *.mkv
+*.wav

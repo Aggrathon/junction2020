@@ -56,10 +56,11 @@ def longest_stretch(arr: List) -> Tuple[int, int]:
     return longest_start, longest_start + longest_length
 
 
-def extract_poses(video: str) -> List:
-    pose = mp_pose.Pose(False, 0.5, 0.5)
+def extract_poses(video: str, confidence: float = 0.5) -> List:
+    pose = mp_pose.Pose(False, confidence, confidence)
     cap = cv2.VideoCapture(video)
     poses = list()
+    all_none = True
 
     while cap.isOpened():
         success, image = cap.read()
@@ -70,12 +71,16 @@ def extract_poses(video: str) -> List:
         results = pose.process(image)
         if results.pose_landmarks:
             poses.append(results.pose_landmarks.landmark)
+            all_none = False
         else:
             poses.append(None)
 
     cap.release()
     pose.close()
-    return poses
+    if all_none and confidence > 0.2:
+        return extract_poses(video, confidence * 0.8)
+    else:
+        return poses
 
 
 def find_extremes(x: np.ndarray) -> np.ndarray:
@@ -177,6 +182,7 @@ def process_video(
     start: int,
     crops: Tuple[np.ndarray, float, np.ndarray, float],
     blur_strength: float = 0.03,
+    mask_smoothing: float = 0.95,
 ):
     cap = cv2.VideoCapture(input)
     fwidth = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -197,14 +203,13 @@ def process_video(
         success, image = cap.read()
         if not success:
             break
-        x = int(fwidth * x) - iwidth // 2
-        y = int(fheight * y) - iheight // 2
-        image = image[y : y + iheight, x : x + iwidth]
         mask = predict_person(model, image)
         # since the segmentation is on images, there needs to be some smoothing for videos
-        last_mask = np.minimum(1.0, last_mask * 0.8 + mask * 0.5)
+        last_mask = np.minimum(1.0, last_mask * mask_smoothing + mask * 0.5)
         image = blur_background(image, last_mask, blur_strength)
-        out.write(image)
+        x = int(fwidth * x) - iwidth // 2
+        y = int(fheight * y) - iheight // 2
+        out.write(image[y : y + iheight, x : x + iwidth])
     cap.release()
     out.release()
 
@@ -223,7 +228,7 @@ def postprocess_head(input_video, output_video):
     start, end = start + max(0, start2 - 30 // 3), min(start + end2 + 30 // 3, end)
     crops = crop_regions(poses[start:end])
     print("Post-processing video")
-    process_video(input_video, output_video, start, crops)
+    process_video(input_video, output_video, start, crops, 0.03, 0.9)
 
 
 def postprocess_ear(input_video, output_video):
@@ -244,11 +249,12 @@ def postprocess_ear(input_video, output_video):
         shoulder_z,
     )
     print("Post-processing video")
-    process_video(input_video, output_video, 0, crops)
+    process_video(input_video, output_video, 0, crops, 0.03, 0.95)
 
 
 if __name__ == "__main__":
     # if not os.path.exists("turn_around_full.avi"):
     #     print("Rotating video")
     #     render_video_vertical("turn_around_full.mp4", "turn_around_full.avi")
-    postprocess_head("turn_around_3.mkv", "output3.avi")
+    # postprocess_head("turn_around_3.mkv", "output3.avi")
+    postprocess_ear("ear_angles_1b.mp4", "output4.avi")
