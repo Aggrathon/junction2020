@@ -82,7 +82,7 @@ def record_ear(
         cam.get(cv2.CAP_PROP_FPS),
         (width, height),
     )
-    tts.say("Slowly turn your head from side to side.")
+    tts.say("Slowly turn your head left and right.")
     cam.flush()
     time = timer() + duration
     step = 0
@@ -95,9 +95,9 @@ def record_ear(
         out.write(image)
         if timer() > time:
             if step == 0:
-                tts.say("Slowly tilt your head left and right.")
+                tts.say("Slowly tilt your head from side to side.")
             elif step == 1:
-                tts.say("Slowly roll your head around.")
+                tts.say("Slowly roll your head around your neck.")
             else:
                 break
             step += 1
